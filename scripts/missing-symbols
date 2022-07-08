@@ -23,6 +23,6 @@ def process(siv_path):
             try:
                 subprocess.check_call(['git', 'grep', '-q', parts[0], 'src'])
             except subprocess.CalledProcessError:
-                print('Missing %s (since %s)' % (parts[0], parts[1]))
+                print(f'Missing {parts[0]} (since {parts[1]})')
 
 process(sys.argv[1])

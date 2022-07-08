@@ -49,14 +49,13 @@ def scan_argv(argv, s, default=None):
                 del argv[i]
             else:
                 i += 1
+        elif s == arg:
+            # --option
+            # set value to True
+            p = True
+            del argv[i]
         else:
-            if s == arg:
-                # --option
-                # set value to True
-                p = True
-                del argv[i]
-            else:
-                i = i + 1
+            i += 1
     ##print argv
     return p
 
@@ -75,7 +74,7 @@ def scan_argvs(argv, s):
                 assert p[-1], arg
             del argv[i]
         else:
-            i = i + 1
+            i += 1
     ##print argv
     return p
 
@@ -113,10 +112,10 @@ class ExtensionConfiguration(object):
                 continue
             dir = os.path.normpath(dir)
             if os.path.isdir(dir):
-                if not dir in self.library_dirs:
+                if dir not in self.library_dirs:
                     self.library_dirs.append(dir)
             elif fatal:
-                fail("FATAL: bad directory %s in environment variable %s" % (dir, envvar))
+                fail(f"FATAL: bad directory {dir} in environment variable {envvar}")
 
     def detect_features(self):
         p = subprocess.Popen((self.curl_config(), '--features'),
@@ -152,9 +151,11 @@ class ExtensionConfiguration(object):
         for option in self.ssl_options():
             if scan_argv(self.argv, option) is not None:
                 for other_option in self.ssl_options():
-                    if option != other_option:
-                        if scan_argv(self.argv, other_option) is not None:
-                            raise ConfigurationError('Cannot give both %s and %s' % (option, other_option))
+                    if (
+                        option != other_option
+                        and scan_argv(self.argv, other_option) is not None
+                    ):
+                        raise ConfigurationError(f'Cannot give both {option} and {other_option}')
 
                 return option
 
@@ -163,14 +164,19 @@ class ExtensionConfiguration(object):
 
         if 'PYCURL_SSL_LIBRARY' in os.environ:
             ssl_lib = os.environ['PYCURL_SSL_LIBRARY']
-            if ssl_lib in ['openssl', 'wolfssl', 'gnutls', 'nss', 'mbedtls', 'sectransp']:
-                ssl_lib_detected = ssl_lib
-                getattr(self, 'using_%s' % ssl_lib)()
-            else:
+            if ssl_lib not in [
+                'openssl',
+                'wolfssl',
+                'gnutls',
+                'nss',
+                'mbedtls',
+                'sectransp',
+            ]:
                 raise ConfigurationError('Invalid value "%s" for PYCURL_SSL_LIBRARY' % ssl_lib)
 
-        option = self.detect_ssl_option()
-        if option:
+            ssl_lib_detected = ssl_lib
+            getattr(self, f'using_{ssl_lib_detected}')()
+        if option := self.detect_ssl_option():
             ssl_lib_detected = option.replace('--with-', '')
             self.ssl_options()[option]()
 
@@ -236,7 +242,7 @@ class ExtensionConfiguration(object):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError:
             exc = sys.exc_info()[1]
-            msg = 'Could not run curl-config: %s' % str(exc)
+            msg = f'Could not run curl-config: {str(exc)}'
             raise ConfigurationError(msg)
         stdout, stderr = p.communicate()
         if p.wait() != 0:
@@ -245,7 +251,7 @@ class ExtensionConfiguration(object):
                 msg += ":\n" + stderr.decode()
             raise ConfigurationError(msg)
         libcurl_version = stdout.decode().strip()
-        print("Using %s (%s)" % (self.curl_config(), libcurl_version))
+        print(f"Using {self.curl_config()} ({libcurl_version})")
         p = subprocess.Popen((self.curl_config(), '--cflags'),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
@@ -300,14 +306,9 @@ class ExtensionConfiguration(object):
                 else:
                     # second successful call
                     sslhintbuf += stdout.decode()
-            else:
-                if optbuf == '':
-                    # no successful call yet
-                    errtext += stderr.decode()
-                else:
-                    # first call succeeded and second call failed
-                    # ignore stderr and the error exit
-                    pass
+            elif optbuf == '':
+                # no successful call yet
+                errtext += stderr.decode()
         if optbuf == "":
             msg = "Neither curl-config --libs nor curl-config --static-libs" +\
                 " succeeded and produced output"
@@ -330,9 +331,8 @@ determine which SSL backend it is using. If your Curl is built against \
 OpenSSL, LibreSSL, BoringSSL, GnuTLS, NSS, mbedTLS, or Secure Transport \
 please specify the SSL backend manually. For other SSL backends please \
 ignore this message.''')
-        else:
-            if self.detect_ssl_option():
-                sys.stderr.write("Warning: SSL backend specified manually but libcurl does not use SSL\n")
+        elif self.detect_ssl_option():
+            sys.stderr.write("Warning: SSL backend specified manually but libcurl does not use SSL\n")
 
         # libraries and options - all libraries and options are forwarded
         # but if --libs succeeded, --static-libs output is ignored
@@ -426,10 +426,10 @@ ignore this message.''')
         if curl_dir is None:
             fail("Please specify --curl-dir=/path/to/built/libcurl")
         if not os.path.exists(curl_dir):
-            fail("Curl directory does not exist: %s" % curl_dir)
+            fail(f"Curl directory does not exist: {curl_dir}")
         if not os.path.isdir(curl_dir):
-            fail("Curl directory is not a directory: %s" % curl_dir)
-        print("Using curl directory: %s" % curl_dir)
+            fail(f"Curl directory is not a directory: {curl_dir}")
+        print(f"Using curl directory: {curl_dir}")
         self.include_dirs.append(os.path.join(curl_dir, "include"))
 
         # libcurl windows documentation states that for linking against libcurl
@@ -482,7 +482,7 @@ ignore this message.''')
             p = subprocess.Popen(['cl.exe'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = p.communicate()
             match = re.search(r'Version (\d+)', err.decode().split("\n")[0])
-            if match and int(match.group(1)) < 16:
+            if match and int(match[1]) < 16:
                 # option removed in vs 2010:
                 # connect.microsoft.com/VisualStudio/feedback/details/475896/link-fatal-error-lnk1117-syntax-error-in-option-opt-nowin98/
                 self.extra_link_args.append("/opt:nowin98")  # use small section alignment
@@ -603,14 +603,12 @@ def get_bdist_msi_version_hack():
                 """ monkey patch replacement for metadata.get_version() that
                         returns MSI compatible version string for bdist_msi
                 """
-                # get filename of the calling function
-                if inspect.stack()[1][1].endswith('bdist_msi.py'):
-                    # strip revision from version (if any), e.g. 11.0.0-r31546
-                    match = re.match(r'(\d+\.\d+\.\d+)', self.version)
-                    assert match
-                    return match.group(1)
-                else:
+                if not inspect.stack()[1][1].endswith('bdist_msi.py'):
                     return self.version
+                # strip revision from version (if any), e.g. 11.0.0-r31546
+                match = re.match(r'(\d+\.\d+\.\d+)', self.version)
+                assert match
+                return match[1]
 
             # monkeypatching get_version() call for DistributionMetadata
             self.distribution.metadata.get_version = \
@@ -673,11 +671,12 @@ def get_extension(argv, split_extension_source=False):
     ext_config = ExtensionConfiguration(argv)
 
     if ext_config.ssl_lib_detected:
-        print('Using SSL library: %s' % PRETTY_SSL_LIBS[ext_config.ssl_lib_detected])
+        print(f'Using SSL library: {PRETTY_SSL_LIBS[ext_config.ssl_lib_detected]}')
     else:
         print('Not using an SSL library')
 
-    ext = Extension(
+    ##print(ext.__dict__); sys.exit(1)
+    return Extension(
         name=PACKAGE,
         sources=sources,
         depends=depends,
@@ -690,8 +689,6 @@ def get_extension(argv, split_extension_source=False):
         extra_compile_args=ext_config.extra_compile_args,
         extra_link_args=ext_config.extra_link_args,
     )
-    ##print(ext.__dict__); sys.exit(1)
-    return ext
 
 
 ###############################################################################
@@ -705,16 +702,19 @@ def get_data_files():
         datadir = os.path.join("doc", PACKAGE)
     else:
         datadir = os.path.join("share", "doc", PACKAGE)
-    #
-    files = ["AUTHORS", "ChangeLog", "COPYING-LGPL", "COPYING-MIT",
-        "INSTALL.rst", "README.rst", "RELEASE-NOTES.rst"]
-    if files:
+    if files := [
+        "AUTHORS",
+        "ChangeLog",
+        "COPYING-LGPL",
+        "COPYING-MIT",
+        "INSTALL.rst",
+        "README.rst",
+        "RELEASE-NOTES.rst",
+    ]:
         data_files.append((os.path.join(datadir), files))
-    files = glob.glob(os.path.join("examples", "*.py"))
-    if files:
+    if files := glob.glob(os.path.join("examples", "*.py")):
         data_files.append((os.path.join(datadir, "examples"), files))
-    files = glob.glob(os.path.join("examples", "quickstart", "*.py"))
-    if files:
+    if files := glob.glob(os.path.join("examples", "quickstart", "*.py")):
         data_files.append((os.path.join(datadir, "examples", "quickstart"), files))
     #
     assert data_files
@@ -755,11 +755,7 @@ def check_manifest():
             paths.append(rel)
 
     for path in paths:
-        included = False
-        for glob in globs:
-            if fnmatch.fnmatch(path, glob):
-                included = True
-                break
+        included = any(fnmatch.fnmatch(path, glob) for glob in globs)
         if not included:
             print(path)
 
@@ -774,7 +770,7 @@ def check_authors():
 
     paras = contents.split("\n\n")
     authors_para = paras[AUTHORS_PARAGRAPH]
-    authors = [author for author in authors_para.strip().split("\n")]
+    authors = list(authors_para.strip().split("\n"))
 
     log = subprocess.check_output(['git', 'log', '--format=%an (%ae)'])
     for author in log.strip().split("\n"):
@@ -797,7 +793,7 @@ def convert_docstrings():
             continue
 
         name = entry.replace('.rst', '')
-        f = open('doc/docstrings/%s' % entry)
+        f = open(f'doc/docstrings/{entry}')
         try:
             text = f.read().strip()
         finally:

@@ -83,7 +83,11 @@ class LinksysSession:
                 raise LinksysError("authorization failure.", True)
             elif not fetch.answered(LinksysSession.check_strings[page]):
                 del self.pagecache[page]
-                raise LinksysError("check string for page %s missing!" % os.path.join(self.host, page), False)
+                raise LinksysError(
+                    f"check string for page {os.path.join(self.host, page)} missing!",
+                    False,
+                )
+
             fetch.close()
     def cache_flush(self):
         self.pagecache = {}
@@ -91,12 +95,11 @@ class LinksysSession:
     # Primitives
     def screen_scrape(self, page, template):
         self.cache_load(page)
-        match = re.compile(template).search(self.pagecache[page])
-        if match:
-            result = match.group(1)
-        else:
-            result = None
-        return result
+        return (
+            match.group(1)
+            if (match := re.compile(template).search(self.pagecache[page]))
+            else None
+        )
     def get_MAC_address(self, page, prefix):
         return self.screen_scrape("", prefix+r":[^M]*\(MAC Address: *([^)]*)")
     def set_flag(self, page, flag, value):
@@ -105,10 +108,8 @@ class LinksysSession:
         else:
             self.actions.append(page, flag, "0")
     def set_IP_address(self, page, cgi, role, ip):
-        ind = 0
-        for octet in ip.split("."):
+        for ind, octet in enumerate(ip.split(".")):
             self.actions.append(("", "F1", role + repr(ind+1), octet))
-            ind += 1
 
     # Scrape configuration data off the main page
     def get_firmware_version(self):
@@ -200,23 +201,26 @@ class LinksysSession:
 
     def configure(self):
         "Write configuration changes to the Linksys."
-        if self.actions:
-            fields = []
-            self.cache_flush()
-            for (page, field, value) in self.actions:
-                self.cache_load(page)
-                if self.pagecache[page].find(field) == -1:
-                    print_stderr("linksys: field %s not found where expected in page %s!" % (field, os.path.join(self.host, page)))
-                    continue
-                else:
-                    fields.append((field, value))
-            # Clearing the action list before fieldsping is deliberate.
-            # Otherwise we could get permanently wedged by a 401.
-            self.actions = []
-            transaction = curl.Curl(self.host)
-            transaction.set_verbosity(self.verbosity)
-            transaction.get("Gozila.cgi", tuple(fields))
-            transaction.close()
+        if not self.actions:
+            return
+        fields = []
+        self.cache_flush()
+        for (page, field, value) in self.actions:
+            self.cache_load(page)
+            if self.pagecache[page].find(field) == -1:
+                print_stderr(
+                    f"linksys: field {field} not found where expected in page {os.path.join(self.host, page)}!"
+                )
+
+            else:
+                fields.append((field, value))
+        # Clearing the action list before fieldsping is deliberate.
+        # Otherwise we could get permanently wedged by a 401.
+        self.actions = []
+        transaction = curl.Curl(self.host)
+        transaction.set_verbosity(self.verbosity)
+        transaction.get("Gozila.cgi", tuple(fields))
+        transaction.close()
 
 if __name__ == "__main__":
     import os, cmd
@@ -228,7 +232,7 @@ if __name__ == "__main__":
             self.session = LinksysSession()
             if os.isatty(0):
                 print("Type ? or `help' for help.")
-                self.prompt = self.session.host + ": "
+                self.prompt = f"{self.session.host}: "
             else:
                 self.prompt = ""
                 print("Bar1")
@@ -243,11 +247,10 @@ if __name__ == "__main__":
             return 0
 
         def do_connect(self, line):
-            newhost = line.strip()
-            if newhost:
+            if newhost := line.strip():
                 self.session.host = newhost
                 self.session.cache_flush()
-                self.prompt = self.session.host + ": "
+                self.prompt = f"{self.session.host}: "
             else:
                 print(self.session.host)
             return 0
@@ -342,7 +345,7 @@ if __name__ == "__main__":
 
         def do_wan_type(self, line):
             try:
-                type=eval("LinksysSession.WAN_CONNECT_"+line.strip().upper())
+                type = eval(f"LinksysSession.WAN_CONNECT_{line.strip().upper()}")
                 self.session.set_connection_type(type)
             except ValueError:
                 print_stderr("linksys: unknown connection type.")

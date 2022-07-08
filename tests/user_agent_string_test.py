@@ -19,10 +19,12 @@ class UserAgentStringTest(unittest.TestCase):
         self.curl.close()
 
     def test_pycurl_user_agent_string(self):
-        self.curl.setopt(pycurl.URL, 'http://%s:8380/header?h=user-agent' % localhost)
+        self.curl.setopt(pycurl.URL, f'http://{localhost}:8380/header?h=user-agent')
         sio = util.BytesIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)
         self.curl.perform()
         user_agent = sio.getvalue().decode()
         assert user_agent.startswith('PycURL/')
-        assert 'libcurl/' in user_agent, 'User agent did not include libcurl/: %s' % user_agent
+        assert (
+            'libcurl/' in user_agent
+        ), f'User agent did not include libcurl/: {user_agent}'

@@ -42,14 +42,13 @@ class PauseTest(unittest.TestCase):
                 return rv
         else:
             def writefunc(data):
-                if not state['paused']:
-                    # cannot write to sio here, because
-                    # curl takes pause return value to mean that
-                    # nothing was written
-                    state['paused'] = True
-                    return pycurl.READFUNC_PAUSE
-                else:
+                if state['paused']:
                     return sio.write(data)
+                # cannot write to sio here, because
+                # curl takes pause return value to mean that
+                # nothing was written
+                state['paused'] = True
+                return pycurl.READFUNC_PAUSE
         def resume(*args):
             state['resumed'] = True
             self.curl.pause(pycurl.PAUSE_CONT)

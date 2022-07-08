@@ -30,7 +30,7 @@ class ProgressBar:
         win.add(vbox)
         win.set_default_size(200, 20)
         vbox.show()
-        label = gtk.Label("Downloading %s" % uri)
+        label = gtk.Label(f"Downloading {uri}")
         label.set_alignment(0, 0.5)
         vbox.pack_start(label)
         label.show()
@@ -83,7 +83,7 @@ class Test(threading.Thread):
 
 # Check command line args
 if len(sys.argv) < 3:
-    print("Usage: %s <URL> <filename>" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <URL> <filename>")
     raise SystemExit
 
 # Make a progress bar window

@@ -67,10 +67,7 @@ class CURLPoolProvider(object):
 
     def __len__(self):
         """Returns the number of pools that this provider currently handles"""
-        proxy_pools_count = sum(
-            len(pool_manager.pools) for pool_manager in self._pool_managers
-        )
-        return proxy_pools_count
+        return sum(len(pool_manager.pools) for pool_manager in self._pool_managers)
 
 
 def _parse_proxy_url(proxy_url):

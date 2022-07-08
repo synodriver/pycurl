@@ -12,11 +12,18 @@ class PycurlBuilder(Builder):
 
     @property
     def python_path(self):
-        if self.bconf.build_wheels:
-            python_path = os.path.join(self.bconf.archives_path, 'venv-%s-%s' % (self.python_release, self.bconf.bitness), 'scripts', 'python')
-        else:
-            python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path
-        return python_path
+        return (
+            os.path.join(
+                self.bconf.archives_path,
+                f'venv-{self.python_release}-{self.bconf.bitness}',
+                'scripts',
+                'python',
+            )
+            if self.bconf.build_wheels
+            else PythonBinary(
+                self.python_release, self.bconf.bitness
+            ).executable_path
+        )
 
     @property
     def platform_indicator(self):
@@ -32,15 +39,14 @@ class PycurlBuilder(Builder):
             dll_paths += zlib_builder.dll_paths
         dll_paths = [os.path.abspath(dll_path) for dll_path in dll_paths]
         with in_dir(self.build_dir_name):
-            dest_lib_path = 'build/lib.%s-%s' % (self.platform_indicator,
-                self.python_release)
+            dest_lib_path = f'build/lib.{self.platform_indicator}-{self.python_release}'
             # exists for building additional targets for the same python version
             mkdir_p(dest_lib_path)
             if self.use_dlls:
                 for dll_path in dll_paths:
                     shutil.copy(dll_path, dest_lib_path)
             with self.execute_batch() as b:
-                b.add("%s setup.py docstrings" % (self.python_path,))
+                b.add(f"{self.python_path} setup.py docstrings")
                 if self.use_dlls:
                     libcurl_arg = '--use-libcurl-dll'
                 else:
@@ -52,8 +58,6 @@ class PycurlBuilder(Builder):
                     openssl_builder = OpensslBuilder(bconf=self.bconf)
                     b.add("set include=%%include%%;%s" % openssl_builder.include_path)
                     b.add("set lib=%%lib%%;%s" % openssl_builder.lib_path)
-                #if build_wheels:
-                    #b.add("call %s" % os.path.join('..', 'venv-%s-%s' % (self.python_release, self.bconf.bitness), 'Scripts', 'activate'))
                 if self.bconf.build_wheels:
                     targets = targets + ['bdist_wheel']
                 if self.bconf.libcurl_version_tuple >= (7, 60, 0):
@@ -67,11 +71,11 @@ class PycurlBuilder(Builder):
                     # plus even windows standard libraries for good measure.
                     if self.bconf.use_zlib:
                         zlib_builder = ZlibBuilder(bconf=self.bconf)
-                        libcurl_arg += ' --link-arg=/LIBPATH:%s' % zlib_builder.lib_path
+                        libcurl_arg += f' --link-arg=/LIBPATH:{zlib_builder.lib_path}'
                         libcurl_arg += ' --link-arg=zlib.lib'
                     if self.bconf.use_openssl:
                         openssl_builder = OpensslBuilder(bconf=self.bconf)
-                        libcurl_arg += ' --link-arg=/LIBPATH:%s' % openssl_builder.lib_path
+                        libcurl_arg += f' --link-arg=/LIBPATH:{openssl_builder.lib_path}'
                         # openssl 1.1
                         libcurl_arg += ' --link-arg=libcrypto.lib'
                         libcurl_arg += ' --link-arg=libssl.lib'
@@ -79,51 +83,31 @@ class PycurlBuilder(Builder):
                         libcurl_arg += ' --link-arg=advapi32.lib'
                     if self.bconf.use_cares:
                         cares_builder = CaresBuilder(bconf=self.bconf)
-                        libcurl_arg += ' --link-arg=/LIBPATH:%s' % cares_builder.lib_path
+                        libcurl_arg += f' --link-arg=/LIBPATH:{cares_builder.lib_path}'
                         libcurl_arg += ' --link-arg=libcares.lib'
                     if self.bconf.use_libssh2:
                         libssh2_builder = Libssh2Builder(bconf=self.bconf)
-                        libcurl_arg += ' --link-arg=/LIBPATH:%s' % libssh2_builder.lib_path
+                        libcurl_arg += f' --link-arg=/LIBPATH:{libssh2_builder.lib_path}'
                         libcurl_arg += ' --link-arg=libssh2.lib'
                     if self.bconf.use_nghttp2:
                         nghttp2_builder = Nghttp2Builder(bconf=self.bconf)
-                        libcurl_arg += ' --link-arg=/LIBPATH:%s' % nghttp2_builder.lib_path
+                        libcurl_arg += f' --link-arg=/LIBPATH:{nghttp2_builder.lib_path}'
                         libcurl_arg += ' --link-arg=nghttp2_static.lib'
                     if self.bconf.vc_version == 'vc9':
                         # this is for normaliz.lib
                         libcurl_builder = LibcurlBuilder(bconf=self.bconf)
-                        libcurl_arg += ' --link-arg=/LIBPATH:%s' % libcurl_builder.lib_path
+                        libcurl_arg += f' --link-arg=/LIBPATH:{libcurl_builder.lib_path}'
                     # We always use normaliz.lib, but it may come from
                     # "standard" msvc location or from libcurl's lib dir for msvc9
                     libcurl_arg += ' --link-arg=normaliz.lib'
                     libcurl_arg += ' --link-arg=user32.lib'
-                b.add("%s setup.py %s --curl-dir=%s %s" % (
-                    self.python_path, ' '.join(targets), libcurl_dir, libcurl_arg))
-            # Fixing of bizarre paths in created zip archives,
-            # no longer relevant because we only keep wheels
-            if False and 'bdist' in targets:
-                zip_basename_orig = 'pycurl-%s.%s.zip' % (
-                    self.bconf.pycurl_version, self.platform_indicator)
-                zip_basename_new = 'pycurl-%s.%s-py%s.zip' % (
-                    self.bconf.pycurl_version, self.platform_indicator, self.python_release)
-                with zipfile.ZipFile('dist/%s' % zip_basename_orig, 'r') as src_zip:
-                    with zipfile.ZipFile('dist/%s' % zip_basename_new, 'w') as dest_zip:
-                        for name in src_zip.namelist():
-                            parts = name.split('/')
-                            while True:
-                                popped = parts.pop(0)
-                                if popped == 'python%s' % self.python_release.dotless or popped.startswith('venv-'):
-                                    break
-                            assert len(parts) > 0
-                            new_name = '/'.join(parts)
-                            print('Recompressing %s -> %s' % (name, new_name))
-
-                            member = src_zip.open(name)
-                            dest_zip.writestr(new_name, member.read(), zipfile.ZIP_DEFLATED)
+                b.add(
+                    f"{self.python_path} setup.py {' '.join(targets)} --curl-dir={libcurl_dir} {libcurl_arg}"
+                )
     
     @property
     def build_dir_name(self):
-        return 'pycurl-%s-py%s-%s' % (self.bconf.pycurl_version, self.python_release, self.bconf.vc_tag)
+        return f'pycurl-{self.bconf.pycurl_version}-py{self.python_release}-{self.bconf.vc_tag}'
     
     def prepare_tree(self):
         #fetch('https://dl.bintray.com/pycurl/pycurl/pycurl-%s.tar.gz' % pycurl_version)

@@ -27,20 +27,17 @@ class SourceForgeUserSession(curl.Curl):
         "Log out of SourceForge."
         self.get("account/logout.php")
     def fetch_xml(self, numid):
-        self.get("export/xml_export.php?group_id=%s" % numid)
+        self.get(f"export/xml_export.php?group_id={numid}")
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        project_id = '28236'    # PyCurl project ID
-    else:
-        project_id = sys.argv[1]
+    project_id = '28236' if len(sys.argv) == 1 else sys.argv[1]
     # Try to grab authenticators out of your .netrc
     try:
         auth = netrc.netrc().authenticators("sourceforge.net")
         name, account, password = auth
     except:
         if len(sys.argv) < 4:
-            print("Usage: %s <project id> <username> <password>" % sys.argv[0])
+            print(f"Usage: {sys.argv[0]} <project id> <username> <password>")
             raise SystemExit
         name = sys.argv[2]
         password = sys.argv[3]
@@ -51,14 +48,11 @@ if __name__ == "__main__":
     if session.answered("Invalid Password or User Name"):
         sys.stderr.write("Login/password not accepted (%d bytes)\n" % len(session.body()))
         sys.exit(1)
-    # We'll see this if we get the right thing.
-    elif session.answered("Personal Page For: " + name):
+    elif session.answered(f"Personal Page For: {name}"):
         session.fetch_xml(project_id)
         sys.stdout.write(session.body())
         session.logout()
         sys.exit(0)
-    # Or maybe SourceForge has changed its site design so our check strings
-    # are no longer valid.
     else:
         sys.stderr.write("Unexpected page (%d bytes)\n"%len(session.body()))
         sys.exit(1)

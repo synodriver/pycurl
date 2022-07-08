@@ -35,7 +35,10 @@ try:
     if len(sys.argv) >= 3:
         num_conn = int(sys.argv[2])
 except:
-    print("Usage: %s <file with URLs to fetch> [<# of concurrent connections>]" % sys.argv[0])
+    print(
+        f"Usage: {sys.argv[0]} <file with URLs to fetch> [<# of concurrent connections>]"
+    )
+
     raise SystemExit
 
 
@@ -69,30 +72,29 @@ class WorkerThread(threading.Thread):
                 url, filename = self.queue.get_nowait()
             except Queue.Empty:
                 raise SystemExit
-            fp = open(filename, "wb")
-            curl = pycurl.Curl()
-            curl.setopt(pycurl.URL, url)
-            curl.setopt(pycurl.FOLLOWLOCATION, 1)
-            curl.setopt(pycurl.MAXREDIRS, 5)
-            curl.setopt(pycurl.CONNECTTIMEOUT, 30)
-            curl.setopt(pycurl.TIMEOUT, 300)
-            curl.setopt(pycurl.NOSIGNAL, 1)
-            curl.setopt(pycurl.WRITEDATA, fp)
-            try:
-                curl.perform()
-            except:
-                import traceback
-                traceback.print_exc(file=sys.stderr)
-                sys.stderr.flush()
-            curl.close()
-            fp.close()
+            with open(filename, "wb") as fp:
+                curl = pycurl.Curl()
+                curl.setopt(pycurl.URL, url)
+                curl.setopt(pycurl.FOLLOWLOCATION, 1)
+                curl.setopt(pycurl.MAXREDIRS, 5)
+                curl.setopt(pycurl.CONNECTTIMEOUT, 30)
+                curl.setopt(pycurl.TIMEOUT, 300)
+                curl.setopt(pycurl.NOSIGNAL, 1)
+                curl.setopt(pycurl.WRITEDATA, fp)
+                try:
+                    curl.perform()
+                except:
+                    import traceback
+                    traceback.print_exc(file=sys.stderr)
+                    sys.stderr.flush()
+                curl.close()
             sys.stdout.write(".")
             sys.stdout.flush()
 
 
 # Start a bunch of threads
 threads = []
-for dummy in range(num_conn):
+for _ in range(num_conn):
     t = WorkerThread(queue)
     t.start()
     threads.append(t)

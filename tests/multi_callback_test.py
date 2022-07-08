@@ -16,7 +16,7 @@ setup_module, teardown_module = appmanager.setup(('app', 8380))
 class MultiCallbackTest(unittest.TestCase):
     def setUp(self):
         self.easy = util.DefaultCurl()
-        self.easy.setopt(pycurl.URL, 'http://%s:8380/long_pause' % localhost)
+        self.easy.setopt(pycurl.URL, f'http://{localhost}:8380/long_pause')
         self.multi = pycurl.CurlMulti()
         self.multi.setopt(pycurl.M_SOCKETFUNCTION, self.socket_callback)
         self.multi.setopt(pycurl.M_TIMERFUNCTION, self.timer_callback)

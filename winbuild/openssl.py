@@ -16,16 +16,22 @@ class OpensslBuilder(StandardBuilder):
             with self.execute_batch() as b:
                 if self.bconf.openssl_version_tuple < (1, 1):
                     # openssl 1.0.2
-                    b.add("patch -p0 < %s" % 
-                        require_file_exists(os.path.join(config.winbuild_patch_root, 'openssl-fix-crt-1.0.2.patch')))
+                    b.add(
+                        f"patch -p0 < {require_file_exists(os.path.join(config.winbuild_patch_root, 'openssl-fix-crt-1.0.2.patch'))}"
+                    )
+
                 elif self.bconf.openssl_version_tuple < (1, 1, 1):
                     # openssl 1.1.0
-                    b.add("patch -p0 < %s" %
-                        require_file_exists(os.path.join(config.winbuild_patch_root, 'openssl-fix-crt-1.1.0.patch')))
+                    b.add(
+                        f"patch -p0 < {require_file_exists(os.path.join(config.winbuild_patch_root, 'openssl-fix-crt-1.1.0.patch'))}"
+                    )
+
                 else:
                     # openssl 1.1.1
-                    b.add("patch -p0 < %s" %
-                        require_file_exists(os.path.join(config.winbuild_patch_root, 'openssl-fix-crt-1.1.1.patch')))
+                    b.add(
+                        f"patch -p0 < {require_file_exists(os.path.join(config.winbuild_patch_root, 'openssl-fix-crt-1.1.1.patch'))}"
+                    )
+
                 if self.bconf.bitness == 64:
                     target = 'VC-WIN64A'
                     batch_file = 'do_win64a'
@@ -53,14 +59,14 @@ class OpensslBuilder(StandardBuilder):
                     # in 1.1.0 the static/shared selection is handled by
                     # invoking the right makefile
                     extras += ['no-shared']
-                    
+
                     # looks like openssl 1.1.0c does not derive
                     # --openssldir from --prefix, like its Configure claims,
                     # and like 1.0.2 does; provide a relative openssl dir
                     # manually
                     extras += ['--openssldir=ssl']
-                b.add("perl Configure %s %s --prefix=%s" % (target, ' '.join(extras), openssl_prefix))
-                
+                b.add(f"perl Configure {target} {' '.join(extras)} --prefix={openssl_prefix}")
+
                 if config.openssl_version_tuple < (1, 1):
                     # openssl 1.0.2
                     b.add("call ms\\%s" % batch_file)
@@ -70,7 +76,7 @@ class OpensslBuilder(StandardBuilder):
                     # openssl 1.1.0
                     b.add("nmake")
                     b.add("nmake install")
-                
+
                 # assemble dist
                 b.add('mkdir dist')
                 b.add('cp -r build/include build/lib dist')

@@ -24,7 +24,7 @@ class HeaderCbTest(unittest.TestCase):
         self.header_lines.append(line.decode())
 
     def test_get(self):
-        self.curl.setopt(pycurl.URL, 'http://%s:8380/success' % localhost)
+        self.curl.setopt(pycurl.URL, f'http://{localhost}:8380/success')
         sio = util.BytesIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)
         self.curl.setopt(pycurl.HEADERFUNCTION, self.header_function)
@@ -37,7 +37,7 @@ class HeaderCbTest(unittest.TestCase):
         # important: must be in utc
         todays_day = _time.strftime('%a', _time.gmtime())
         # Date: Sun, 03 Mar 2013 05:38:12 GMT\r\n
-        self.check('Date: %s' % todays_day)
+        self.check(f'Date: {todays_day}')
         # Server: WSGIServer/0.1 Python/2.7.3\r\n
         self.check('Server: WSGIServer')
         self.check('Content-Length: 7')
@@ -47,4 +47,4 @@ class HeaderCbTest(unittest.TestCase):
         for line in self.header_lines:
             if wanted_text in line:
                 return
-        assert False, "%s not found in header lines" % wanted_text
+        assert False, f"{wanted_text} not found in header lines"

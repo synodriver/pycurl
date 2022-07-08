@@ -84,11 +84,6 @@ class Builder(object):
         yield batch
         with open('doit.bat', 'w') as f:
             f.write(batch.batch_text())
-        if False:
-            print("Executing:")
-            with open('doit.bat', 'r') as f:
-                print(f.read())
-            sys.stdout.flush()
         rv = subprocess.call(['doit.bat'])
         if rv != 0:
             print("\nFailed to execute the following commands:\n")
@@ -124,11 +119,11 @@ class StandardBuilder(Builder):
         
     @property
     def my_version(self):
-        return getattr(self.bconf, '%s_version' % self.builder_name)
+        return getattr(self.bconf, f'{self.builder_name}_version')
 
     @property
     def output_dir_path(self):
-        return '%s-%s-%s' % (self.builder_name, self.my_version, self.bconf.vc_tag)
+        return f'{self.builder_name}-{self.my_version}-{self.bconf.vc_tag}'
         
     def standard_fetch_extract(self, url_template):
         url = url_template % dict(

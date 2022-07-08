@@ -30,11 +30,11 @@ class MultiMemoryMgmtTest(unittest.TestCase):
         # settles tracked object count for the actual test below
         gc.collect()
         object_count = len(gc.get_objects())
-        
+
         c = pycurl.CurlMulti()
         c.setopt(callback, lambda x: True)
         del c
-        
+
         gc.collect()
         new_object_count = len(gc.get_objects())
         # it seems that GC sometimes collects something that existed
