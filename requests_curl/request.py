@@ -48,14 +48,14 @@ class CURLRequest(object):
 
     @property
     def set_cipher(self):
-        CIPHER_LIST = [
-            'TLS_AES_128_GCM_SHA256', 'TLS_AES_256_GCM_SHA384', 'TLS_CHACHA20_POLY1305_SHA256',
-            'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-AES256-GCM-SHA384',
-            'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-CHACHA20-POLY1305', 'ECDHE-RSA-CHACHA20-POLY1305',
-            'ECDHE-RSA-AES128-SHA', 'ECDHE-RSA-AES256-SHA', 'AES128-GCM-SHA256', 'AES256-GCM-SHA384',
-            'AES128-SHA,AES256-SHA'
-        ]
         if self._CIPHER_LIST is None:
+            CIPHER_LIST = [
+                'TLS_AES_128_GCM_SHA256', 'TLS_AES_256_GCM_SHA384', 'TLS_CHACHA20_POLY1305_SHA256',
+                'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-AES256-GCM-SHA384',
+                'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-CHACHA20-POLY1305', 'ECDHE-RSA-CHACHA20-POLY1305',
+                'ECDHE-RSA-AES128-SHA', 'ECDHE-RSA-AES256-SHA', 'AES128-GCM-SHA256', 'AES256-GCM-SHA384',
+                'AES128-SHA,AES256-SHA'
+            ]
             self._CIPHER_LIST = ','.join(CIPHER_LIST)
         return self._CIPHER_LIST
 
@@ -71,7 +71,7 @@ class CURLRequest(object):
             pycurl.SSL_ENABLE_NPN: 0
         }
 
-        options.update(self.build_headers_option())
+        options |= self.build_headers_option()
         options.update(self.build_body_options())
         # HTTP method must come after the body options since
         # we may need to overwrite the method being used, for example
@@ -98,10 +98,7 @@ class CURLRequest(object):
         method = self._request.method
         method = method.upper() if method else "GET"
 
-        if method == "GET":
-            return {}
-        else:
-            return {pycurl.CUSTOMREQUEST: method}
+        return {} if method == "GET" else {pycurl.CUSTOMREQUEST: method}
 
     def build_body_options(self):
         if self._request.method == "HEAD":
@@ -114,18 +111,16 @@ class CURLRequest(object):
 
             if is_encoded_form:
                 return {pycurl.POSTFIELDS: self._request.body}
-            else:
-                if hasattr(self._request.body, "read"):
-                    self._body_stream = self._request.body
-                else:
-                    self._body_stream = six.BytesIO(
-                        six.ensure_binary(self._request.body)
-                    )
+            self._body_stream = (
+                self._request.body
+                if hasattr(self._request.body, "read")
+                else six.BytesIO(six.ensure_binary(self._request.body))
+            )
 
-                return {
-                    pycurl.UPLOAD: True,
-                    pycurl.READFUNCTION: self._body_stream.read,
-                }
+            return {
+                pycurl.UPLOAD: True,
+                pycurl.READFUNCTION: self._body_stream.read,
+            }
 
         else:
             return {}
@@ -146,40 +141,38 @@ class CURLRequest(object):
 
     def build_ca_options(self):
         """Configures the CA of this curl request."""
-        if self._verify:
-            ca_value = (
-                self._verify
-                if isinstance(self._verify, six.string_types)
-                else DEFAULT_CA_BUNDLE_PATH
-            )
-
-            # Requests allows the verify parameter to be a file or a directory. This requires
-            # a different CURL option for each case
-            ca_opt = pycurl.CAPATH if os.path.isdir(ca_value) else pycurl.CAINFO
-
-            return {
-                pycurl.SSL_VERIFYHOST: 2,
-                pycurl.SSL_VERIFYPEER: 2,
-                ca_opt: ca_value,
-            }
-        else:
+        if not self._verify:
             return {
                 pycurl.SSL_VERIFYHOST: 0,
                 pycurl.SSL_VERIFYPEER: 0,
             }
+        ca_value = (
+            self._verify
+            if isinstance(self._verify, six.string_types)
+            else DEFAULT_CA_BUNDLE_PATH
+        )
+
+        # Requests allows the verify parameter to be a file or a directory. This requires
+        # a different CURL option for each case
+        ca_opt = pycurl.CAPATH if os.path.isdir(ca_value) else pycurl.CAINFO
+
+        return {
+            pycurl.SSL_VERIFYHOST: 2,
+            pycurl.SSL_VERIFYPEER: 2,
+            ca_opt: ca_value,
+        }
 
     def build_cert_options(self):
         """Configures the SSL certificate of this curl request."""
 
-        if self._cert:
-            if isinstance(self._cert, six.string_types):
-                cert_path = self._cert
-                return {pycurl.SSLCERT: cert_path}
-            else:
-                cert_path, key_path = self._cert
-                return {
-                    pycurl.SSLCERT: cert_path,
-                    pycurl.SSLKEY: key_path,
-                }
-        else:
+        if not self._cert:
             return {}
+        if isinstance(self._cert, six.string_types):
+            cert_path = self._cert
+            return {pycurl.SSLCERT: cert_path}
+        else:
+            cert_path, key_path = self._cert
+            return {
+                pycurl.SSLCERT: cert_path,
+                pycurl.SSLKEY: key_path,
+            }

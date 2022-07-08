@@ -93,7 +93,7 @@ def min_python(major, minor):
     def decorator(fn):
         @functools.wraps(fn)
         def decorated(*args, **kwargs):
-            if sys.version_info[0:2] < (major, minor):
+            if sys.version_info[:2] < (major, minor):
                 raise unittest.SkipTest('python < %d.%d' % (major, minor))
 
             return fn(*args, **kwargs)
@@ -180,7 +180,7 @@ def only_ssl_backends(*backends):
             else:
                 current_backend = 'none'
             if current_backend not in backends:
-                raise unittest.SkipTest('SSL backend is %s' % current_backend)
+                raise unittest.SkipTest(f'SSL backend is {current_backend}')
 
             return fn(*args, **kwargs)
 
@@ -244,7 +244,7 @@ except AttributeError:
 
 def wait_for_network_service(netloc, check_interval, num_attempts):
     ok = False
-    for i in range(num_attempts):
+    for _ in range(num_attempts):
         try:
             conn = create_connection(netloc, check_interval)
         except socket.error:
@@ -269,23 +269,20 @@ def get_sys_path(p=None):
         from distutils.util import get_platform
     except ImportError:
         return p
-    p0 = ""
-    if p:
-        p0 = p[0]
+    p0 = p[0] if p else ""
     #
     plat = get_platform()
-    plat_specifier = "%s-%s" % (plat, sys.version[:3])
+    plat_specifier = f"{plat}-{sys.version[:3]}"
     ##print plat, plat_specifier
     #
-    for prefix in (p0, os.curdir, os.pardir,):
+    for prefix in (p0, os.curdir, os.pardir):
         if not prefix:
             continue
         d = os.path.join(prefix, "build")
-        for subdir in ("lib", "lib." + plat_specifier, "lib." + plat):
+        for subdir in ("lib", f"lib.{plat_specifier}", f"lib.{plat}"):
             dir = os.path.normpath(os.path.join(d, subdir))
-            if os.path.isdir(dir):
-                if dir not in p:
-                    p.insert(1, dir)
+            if os.path.isdir(dir) and dir not in p:
+                p.insert(1, dir)
     #
     return p
 

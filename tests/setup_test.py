@@ -20,9 +20,6 @@ def set_env(key, new_value):
         os.environ[key] = new_value
     elif old_value is not None:
         del os.environ[key]
-    else:
-        # new and old values are None which mean the variable is not set
-        pass
     return old_value
 
 def reset_env(key, old_value):
@@ -53,7 +50,7 @@ def min_python_version(*spec):
         @functools.wraps(fn)
         def decorated(*args, **kwargs):
             if sys.version_info < spec:
-                raise unittest.SkipTest('Minimum Python version %s required' % spec.join('.'))
+                raise unittest.SkipTest(f"Minimum Python version {spec.join('.')} required")
 
             return fn(*args, **kwargs)
         return decorated

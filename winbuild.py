@@ -46,7 +46,7 @@ class Config:
     which dependencies to use,
     and where various binaries, headers and libraries are located in the filesystem.
     '''
-    
+
     # work directory for downloading dependencies and building everything
     root = 'c:/dev/build-pycurl'
     # where msysgit is installed
@@ -109,13 +109,13 @@ class Config:
     # another application for this is to supply normaliz.lib for vc9
     # which has an older version that doesn't have the symbols we need
     windows_sdk_path = 'c:\\program files (x86)\\microsoft sdks\\windows\\v7.1a'
-    
+
     # See the note below about VCTargetsPath and
     # https://stackoverflow.com/questions/16092169/why-does-msbuild-look-in-c-for-microsoft-cpp-default-props-instead-of-c-progr.
     # Since we are targeting vc14, use the v140 path.
     vc_targets_path = "c:\\Program Files (x86)\\MSBuild\\Microsoft.Cpp\\v4.0\\v140"
     #vc_targets_path = "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current"
-    
+
     # Where the msbuild that is part of visual studio lives
     msbuild_bin_path = "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin"
 
@@ -141,11 +141,11 @@ from winbuild.ssh import *
 from winbuild.curl import *
 from winbuild.pycurl import *
 
-user_config = {}
-for attr in dir(Config):
-    if attr.startswith('_'):
-        continue
-    user_config[attr] = getattr(Config, attr)
+user_config = {
+    attr: getattr(Config, attr)
+    for attr in dir(Config)
+    if not attr.startswith('_')
+}
 
 # This must be at top level as __file__ can be a relative path
 # and changing current directory will break it
@@ -180,8 +180,7 @@ def dep_builders(bconf):
     if config.use_nghttp2:
         builders.append(Nghttp2Builder)
     if config.use_libidn:
-        builders.append(LibiconvBuilder)
-        builders.append(LibidnBuilder)
+        builders.extend((LibiconvBuilder, LibidnBuilder))
     builders.append(LibcurlBuilder)
     builders = [
         cls(bconf=bconf)
@@ -198,14 +197,14 @@ def build_dependencies(config):
             raise ValueError('use_openssl must be true if use_libssh2 is true')
 
     if config.git_bin_path:
-        os.environ['PATH'] += ";%s" % config.git_bin_path
+        os.environ['PATH'] += f";{config.git_bin_path}"
     mkdir_p(config.archives_path)
     with in_dir(config.archives_path):
         for bconf in buildconfigs():
-                if opts.verbose:
-                    print('Builddep for %s, %s-bit' % (bconf.vc_version, bconf.bitness))
-                for builder in dep_builders(bconf):
-                    step(builder.build, (), builder.state_tag)
+            if opts.verbose:
+                print(f'Builddep for {bconf.vc_version}, {bconf.bitness}-bit')
+            for builder in dep_builders(bconf):
+                step(builder.build, (), builder.state_tag)
 
 def build(config):
     # note: adds git_bin_path to PATH if necessary, and creates archives_path
@@ -243,8 +242,9 @@ def python_metas():
         else:
             ext = 'msi'
             amd64_suffix = '.amd64'
-        url_32 = 'https://www.python.org/ftp/python/%s/python-%s.%s' % (version, version, ext)
-        url_64 = 'https://www.python.org/ftp/python/%s/python-%s%s.%s' % (version, version, amd64_suffix, ext)
+        url_32 = f'https://www.python.org/ftp/python/{version}/python-{version}.{ext}'
+        url_64 = f'https://www.python.org/ftp/python/{version}/python-{version}{amd64_suffix}.{ext}'
+
         meta = dict(
             version=version, ext=ext, amd64_suffix=amd64_suffix,
             url_32=url_32, url_64=url_64,
@@ -272,11 +272,16 @@ def install_python(config, meta, bitness):
         cmd = [archive_path]
     else:
         cmd = ['msiexec', '/i', archive_path, '/norestart']
-    cmd += ['/passive', 'InstallAllUsers=1',
-            'Include_test=0', 'Include_doc=0', 'Include_launcher=0',
-            'Include_tcltk=0',
-            'TargetDir=%s' % meta['installed_path_%d' % bitness],
-        ]
+    cmd += [
+        '/passive',
+        'InstallAllUsers=1',
+        'Include_test=0',
+        'Include_doc=0',
+        'Include_launcher=0',
+        'Include_tcltk=0',
+        f"TargetDir={meta['installed_path_%d' % bitness]}",
+    ]
+
     sys.stdout.write('Installing python %s (%d bit)\n' % (meta['version'], bitness))
     print(' '.join(cmd))
     sys.stdout.flush()
@@ -284,7 +289,7 @@ def install_python(config, meta, bitness):
 
 def download_bootstrap_python(config):
     version = config.python_versions[-2]
-    url = 'https://www.python.org/ftp/python/%s/python-%s.msi' % (version, version)
+    url = f'https://www.python.org/ftp/python/{version}/python-{version}.msi'
     fetch(url)
 
 def install_virtualenv(config):
@@ -293,10 +298,13 @@ def install_virtualenv(config):
         fetch('https://pypi.python.org/packages/d4/0c/9840c08189e030873387a73b90ada981885010dd9aea134d6de30cd24cb8/virtualenv-15.1.0.tar.gz')
         for bitness in config.bitnesses:
             for python_release in config.python_releases:
-                print('Installing virtualenv %s for Python %s (%s bit)' % (config.virtualenv_version, python_release, bitness))
+                print(
+                    f'Installing virtualenv {config.virtualenv_version} for Python {python_release} ({bitness} bit)'
+                )
+
                 sys.stdout.flush()
-                untar(config, 'virtualenv-%s' % config.virtualenv_version)
-                with in_dir('virtualenv-%s' % config.virtualenv_version):
+                untar(config, f'virtualenv-{config.virtualenv_version}')
+                with in_dir(f'virtualenv-{config.virtualenv_version}'):
                     python_binary = PythonBinary(python_release, bitness)
                     cmd = [python_binary.executable_path(config), 'setup.py', 'install']
                     check_call(cmd)
@@ -304,11 +312,11 @@ def install_virtualenv(config):
 def create_virtualenvs(config):
     for bitness in config.bitnesses:
         for python_release in config.python_releases:
-            print('Creating a virtualenv for Python %s (%s bit)' % (python_release, bitness))
+            print(f'Creating a virtualenv for Python {python_release} ({bitness} bit)')
             sys.stdout.flush()
             with in_dir(config.archives_path):
                 python_binary = PythonBinary(python_release, bitness)
-                venv_basename = 'venv-%s-%s' % (python_release, bitness)
+                venv_basename = f'venv-{python_release}-{bitness}'
                 cmd = [python_binary.executable_path(config), '-m', 'virtualenv', venv_basename]
                 check_call(cmd)
 
@@ -323,7 +331,7 @@ def assemble_deps(config):
         for builder in dep_builders(bconf):
             cp_r(config, builder.include_path, dest)
             cp_r(config, builder.lib_path, dest)
-            with zipfile.ZipFile(os.path.join('deps', bconf.vc_tag + '.zip'), 'w', zipfile.ZIP_DEFLATED) as zip:
+            with zipfile.ZipFile(os.path.join('deps', f'{bconf.vc_tag}.zip'), 'w', zipfile.ZIP_DEFLATED) as zip:
                 for root, dirs, files in os.walk(dest):
                     for file in files:
                         path = os.path.join(root, file)
@@ -332,13 +340,13 @@ def assemble_deps(config):
 
 def get_deps():
     import struct
-    
+
     python_release = sys.version_info[:2]
     vc_version = PYTHON_VC_VERSIONS['.'.join(map(str, python_release))]
     bitness = struct.calcsize('P') * 8
     vc_tag = '%s-%d' % (vc_version, bitness)
-    fetch('https://dl.bintray.com/pycurl/deps/%s.zip' % vc_tag)
-    check_call(['unzip', '-d', 'deps', vc_tag + '.zip'])
+    fetch(f'https://dl.bintray.com/pycurl/deps/{vc_tag}.zip')
+    check_call(['unzip', '-d', 'deps', f'{vc_tag}.zip'])
 
 import optparse
 
@@ -362,14 +370,14 @@ if opts.python:
     chosen_python_versions = []
     for python in chosen_pythons:
         python = python.replace('.', '')
-        python = python[0] + '.' + python[1] + '.'
+        python = f'{python[0]}.{python[1]}.'
         ok = False
         for python_version in Config.python_versions:
             if python_version.startswith(python):
                 chosen_python_versions.append(python_version)
                 ok = True
         if not ok:
-            print('Invalid python %s' % python)
+            print(f'Invalid python {python}')
             exit(2)
 else:
     chosen_python_versions = Config.python_versions
@@ -406,7 +414,7 @@ if len(args) > 0:
     elif args[0] == 'getdeps':
         get_deps()
     else:
-        print('Unknown command: %s' % args[0])
+        print(f'Unknown command: {args[0]}')
         exit(2)
 else:
     build(config)

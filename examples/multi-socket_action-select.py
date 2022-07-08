@@ -60,11 +60,7 @@ import sys, select
 import pycurl
 from io import BytesIO
 
-if len(sys.argv) > 1:
-    url = sys.argv[1]
-else:
-    url = 'https://www.python.org'
-
+url = sys.argv[1] if len(sys.argv) > 1 else 'https://www.python.org'
 state = {
     'rlist': [],
     'wlist': [],
@@ -77,9 +73,9 @@ state = {
 }
 
 def socket_fn(what, sock_fd, multi, socketp):
-    if what == pycurl.POLL_IN or what == pycurl.POLL_INOUT:
+    if what in [pycurl.POLL_IN, pycurl.POLL_INOUT]:
         state['rlist'].append(sock_fd)
-    elif what == pycurl.POLL_OUT or what == pycurl.POLL_INOUT:
+    elif what == pycurl.POLL_OUT:
         state['wlist'].append(sock_fd)
     elif what == pycurl.POLL_REMOVE:
         if sock_fd in state['rlist']:
@@ -87,7 +83,7 @@ def socket_fn(what, sock_fd, multi, socketp):
         if sock_fd in state['wlist']:
             state['wlist'].remove(sock_fd)
     else:
-        raise Exception("Unknown value of what: %s" % what)
+        raise Exception(f"Unknown value of what: {what}")
 
 def work(timeout):
     rready, wready, xready = select.select(
@@ -169,18 +165,15 @@ multi.add_handle(easy)
 handles = multi.socket_action(pycurl.SOCKET_TIMEOUT, 0)
 # This should invoke the timer function with a timeout value.
 
-while True:
-    if state['running'] == 0:
-        break
-    else:
-        # By the time we get here, timer function should have been already
-        # invoked at least once so that we have a libcurl-supplied
-        # timeout value. But in case this hasn't happened, default the timeout
-        # to 1 second.
-        timeout = state['timeout']
-        if timeout is None:
-            raise Exception('Need to poll for I/O but the timeout is not set!')
-        work(timeout)
+while state['running'] != 0:
+    # By the time we get here, timer function should have been already
+    # invoked at least once so that we have a libcurl-supplied
+    # timeout value. But in case this hasn't happened, default the timeout
+    # to 1 second.
+    timeout = state['timeout']
+    if timeout is None:
+        raise Exception('Need to poll for I/O but the timeout is not set!')
+    work(timeout)
 
 multi.remove_handle(easy)
 easy.close()

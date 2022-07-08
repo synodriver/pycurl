@@ -39,7 +39,7 @@ class SeekCbTest(unittest.TestCase):
     def test_seek_function(self):
         c = util.DefaultCurl()
         c.setopt(pycurl.UPLOAD, 1)
-        c.setopt(pycurl.URL, "ftp://%s:8321/tests/tmp/upload.txt" % localhost)
+        c.setopt(pycurl.URL, f"ftp://{localhost}:8321/tests/tmp/upload.txt")
         c.setopt(pycurl.RESUME_FROM, 0)
         #c.setopt(pycurl.VERBOSE, 1)
         upload_file = PartialFileSource()
@@ -59,7 +59,7 @@ class SeekCbTest(unittest.TestCase):
         del upload_file
 
         c = util.DefaultCurl()
-        c.setopt(pycurl.URL, "ftp://%s:8321/tests/tmp/upload.txt" % localhost)
+        c.setopt(pycurl.URL, f"ftp://{localhost}:8321/tests/tmp/upload.txt")
         c.setopt(pycurl.RESUME_FROM, -1)
         c.setopt(pycurl.UPLOAD, 1)
         #c.setopt(pycurl.VERBOSE, 1)

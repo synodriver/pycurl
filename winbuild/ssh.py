@@ -8,8 +8,10 @@ class Libssh2Builder(StandardBuilder):
         with in_dir(libssh2_dir):
             with self.execute_batch() as b:
                 if self.bconf.libssh2_version_tuple < (1, 8, 0) and self.bconf.vc_version == 'vc14':
-                    b.add("patch -p0 < %s" %
-                        require_file_exists(os.path.join(config.winbuild_patch_root, 'libssh2-vs2015.patch')))
+                    b.add(
+                        f"patch -p0 < {require_file_exists(os.path.join(config.winbuild_patch_root, 'libssh2-vs2015.patch'))}"
+                    )
+
                 zlib_builder = ZlibBuilder(bconf=self.bconf)
                 openssl_builder = OpensslBuilder(bconf=self.bconf)
                 vars = '''
@@ -33,7 +35,7 @@ BUILD_STATIC_LIB=1
                 b.add("nmake -f NMakefile")
                 # libcurl loves its _a suffixes on static library names
                 b.add("cp Release\\src\\libssh2.lib Release\\src\\libssh2_a.lib")
-                
+
                 # assemble dist
                 b.add('mkdir dist dist\\include dist\\lib')
                 b.add('cp Release/src/*.lib dist/lib')

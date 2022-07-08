@@ -20,7 +20,7 @@ class WriteToStringioTest(unittest.TestCase):
         self.curl.close()
 
     def test_write_to_bytesio(self):
-        self.curl.setopt(pycurl.URL, 'http://%s:8380/success' % localhost)
+        self.curl.setopt(pycurl.URL, f'http://{localhost}:8380/success')
         sio = util.BytesIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)
         self.curl.perform()
@@ -28,7 +28,7 @@ class WriteToStringioTest(unittest.TestCase):
 
     @util.only_python3
     def test_write_to_stringio(self):
-        self.curl.setopt(pycurl.URL, 'http://%s:8380/success' % localhost)
+        self.curl.setopt(pycurl.URL, f'http://{localhost}:8380/success')
         # stringio in python 3
         sio = util.StringIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)

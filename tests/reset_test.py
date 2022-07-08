@@ -15,7 +15,7 @@ class ResetTest(unittest.TestCase):
     def test_reset(self):
         c = util.DefaultCurl()
         c.setopt(pycurl.USERAGENT, 'Phony/42')
-        c.setopt(pycurl.URL, 'http://%s:8380/header?h=user-agent' % localhost)
+        c.setopt(pycurl.URL, f'http://{localhost}:8380/header?h=user-agent')
         sio = util.BytesIO()
         c.setopt(pycurl.WRITEFUNCTION, sio.write)
         c.perform()
@@ -23,7 +23,7 @@ class ResetTest(unittest.TestCase):
         assert user_agent == 'Phony/42'
 
         c.reset()
-        c.setopt(pycurl.URL, 'http://%s:8380/header?h=user-agent' % localhost)
+        c.setopt(pycurl.URL, f'http://{localhost}:8380/header?h=user-agent')
         sio = util.BytesIO()
         c.setopt(pycurl.WRITEFUNCTION, sio.write)
         c.perform()
@@ -39,9 +39,9 @@ class ResetTest(unittest.TestCase):
 
         eh = util.DefaultCurl()
 
-        for x in range(1, 20):
+        for _ in range(1, 20):
             eh.setopt(pycurl.WRITEFUNCTION, outf.write)
-            eh.setopt(pycurl.URL, 'http://%s:8380/success' % localhost)
+            eh.setopt(pycurl.URL, f'http://{localhost}:8380/success')
             cm.add_handle(eh)
 
             while 1:

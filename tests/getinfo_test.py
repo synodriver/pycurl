@@ -29,7 +29,11 @@ class GetinfoTest(unittest.TestCase):
         assert type(self.curl.getinfo(pycurl.SPEED_DOWNLOAD)) is float
         assert self.curl.getinfo(pycurl.SPEED_DOWNLOAD) > 0
         self.assertEqual(7, self.curl.getinfo(pycurl.SIZE_DOWNLOAD))
-        self.assertEqual('http://%s:8380/success' % localhost, self.curl.getinfo(pycurl.EFFECTIVE_URL))
+        self.assertEqual(
+            f'http://{localhost}:8380/success',
+            self.curl.getinfo(pycurl.EFFECTIVE_URL),
+        )
+
         self.assertEqual('text/html; charset=utf-8', self.curl.getinfo(pycurl.CONTENT_TYPE).lower())
         assert type(self.curl.getinfo(pycurl.NAMELOOKUP_TIME)) is float
         assert self.curl.getinfo(pycurl.NAMELOOKUP_TIME) > 0
@@ -59,7 +63,7 @@ class GetinfoTest(unittest.TestCase):
         assert type(self.curl.getinfo(pycurl.LOCAL_PORT)) is int
 
     def make_request(self, path='/success', expected_body='success'):
-        self.curl.setopt(pycurl.URL, 'http://%s:8380' % localhost + path)
+        self.curl.setopt(pycurl.URL, f'http://{localhost}:8380' + path)
         sio = util.BytesIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)
         self.curl.perform()
@@ -69,9 +73,13 @@ class GetinfoTest(unittest.TestCase):
     def test_getinfo_cookie_invalid_utf8_python2(self):
         self.curl.setopt(self.curl.COOKIELIST, '')
         self.make_request('/set_cookie_invalid_utf8', 'cookie set')
-        
+
         self.assertEqual(200, self.curl.getinfo(pycurl.HTTP_CODE))
-        expected = "%s" % localhost + "\tFALSE\t/\tFALSE\t0\t\xb3\xd2\xda\xcd\xd7\t%96%A6g%9Ay%B0%A5g%A7tm%7C%95%9A"
+        expected = (
+            f"{localhost}"
+            + "\tFALSE\t/\tFALSE\t0\t\xb3\xd2\xda\xcd\xd7\t%96%A6g%9Ay%B0%A5g%A7tm%7C%95%9A"
+        )
+
         self.assertEqual([expected], self.curl.getinfo(pycurl.INFO_COOKIELIST))
 
     @util.only_python3
@@ -87,13 +95,6 @@ class GetinfoTest(unittest.TestCase):
 
     def test_getinfo_raw_cookie_invalid_utf8(self):
         raise unittest.SkipTest('bottle converts to utf-8? try without it')
-        
-        self.curl.setopt(self.curl.COOKIELIST, '')
-        self.make_request('/set_cookie_invalid_utf8', 'cookie set')
-        
-        self.assertEqual(200, self.curl.getinfo(pycurl.HTTP_CODE))
-        expected = util.b("%s" % localhost + "\tFALSE\t/\tFALSE\t0\t\xb3\xd2\xda\xcd\xd7\t%96%A6g%9Ay%B0%A5g%A7tm%7C%95%9A")
-        self.assertEqual([expected], self.curl.getinfo_raw(pycurl.INFO_COOKIELIST))
 
     @util.only_python2
     def test_getinfo_content_type_invalid_utf8_python2(self):
@@ -114,12 +115,6 @@ class GetinfoTest(unittest.TestCase):
 
     def test_getinfo_raw_content_type_invalid_utf8(self):
         raise unittest.SkipTest('bottle converts to utf-8? try without it')
-        
-        self.make_request('/content_type_invalid_utf8', 'content type set')
-        
-        self.assertEqual(200, self.curl.getinfo(pycurl.HTTP_CODE))
-        expected = util.b('\xb3\xd2\xda\xcd\xd7')
-        self.assertEqual(expected, self.curl.getinfo_raw(pycurl.CONTENT_TYPE))
 
     def test_getinfo_number(self):
         self.make_request()

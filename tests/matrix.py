@@ -35,7 +35,7 @@ def subprocess_check_call(cmd, **kwargs):
         subprocess.check_call(cmd, **kwargs)
     except OSError as exc:
         message = exc.args[0]
-        message = '%s while trying to execute %s' % (message, str(cmd))
+        message = f'{message} while trying to execute {str(cmd)}'
         args = tuple([message] + exc.args[1:])
         raise type(exc)(args)
 
@@ -45,47 +45,49 @@ def fetch(url, archive=None):
     if not os.path.exists(archive):
         sys.stdout.write("Fetching %s\n" % url)
         io = urlopen(url)
-        with open('.tmp.%s' % archive, 'wb') as f:
+        with open(f'.tmp.{archive}', 'wb') as f:
             while True:
                 chunk = io.read(65536)
                 if len(chunk) == 0:
                     break
                 f.write(chunk)
-        os.rename('.tmp.%s' % archive, archive)
+        os.rename(f'.tmp.{archive}', archive)
 
 def build(archive, dir, prefix, meta=None):
-    if not os.path.exists(dir):
-        sys.stdout.write("Building %s\n" % archive)
-        subprocess_check_call(['tar', 'xf', archive])
-        with in_dir(dir):
-            if meta and 'patches' in meta:
-                for patch in meta['patches']:
-                    patch_path = os.path.join(root, 'matrix', patch)
-                    subprocess_check_call(['patch', '-p1', '-i', patch_path])
-            subprocess_check_call(['./configure', '--prefix=%s' % prefix])
-            if 'post-configure' in meta:
-                for cmd in meta['post-configure']:
-                    subprocess_check_call(cmd, shell=True)
-            subprocess_check_call(['make'])
-            subprocess_check_call(['make', 'install'])
+    if os.path.exists(dir):
+        return
+    sys.stdout.write("Building %s\n" % archive)
+    subprocess_check_call(['tar', 'xf', archive])
+    with in_dir(dir):
+        if meta and 'patches' in meta:
+            for patch in meta['patches']:
+                patch_path = os.path.join(root, 'matrix', patch)
+                subprocess_check_call(['patch', '-p1', '-i', patch_path])
+        subprocess_check_call(['./configure', f'--prefix={prefix}'])
+        if 'post-configure' in meta:
+            for cmd in meta['post-configure']:
+                subprocess_check_call(cmd, shell=True)
+        subprocess_check_call(['make'])
+        subprocess_check_call(['make', 'install'])
 
 def run_matrix(python_versions, libcurl_versions):
     for python_version in python_versions:
-        url = 'http://www.python.org/ftp/python/%s/Python-%s.tgz' % (python_version, python_version)
+        url = f'http://www.python.org/ftp/python/{python_version}/Python-{python_version}.tgz'
+
         archive = os.path.basename(url)
         fetch(url, archive)
 
         dir = archive.replace('.tgz', '')
-        prefix = os.path.abspath('i/%s' % dir)
+        prefix = os.path.abspath(f'i/{dir}')
         build(archive, dir, prefix)
 
     for libcurl_version in libcurl_versions:
-        url = 'https://curl.haxx.se/download/curl-%s.tar.gz' % libcurl_version
+        url = f'https://curl.haxx.se/download/curl-{libcurl_version}.tar.gz'
         archive = os.path.basename(url)
         fetch(url, archive)
 
         dir = archive.replace('.tar.gz', '')
-        prefix = os.path.abspath('i/%s' % dir)
+        prefix = os.path.abspath(f'i/{dir}')
         build(archive, dir, prefix, meta=libcurl_meta.get(libcurl_version))
 
     fetch('https://raw.github.com/pypa/virtualenv/1.7/virtualenv.py', 'virtualenv-1.7.py')
@@ -97,9 +99,9 @@ def run_matrix(python_versions, libcurl_versions):
     for python_version in python_versions:
         python_version_pieces = [int(piece) for piece in python_version.split('.')[:2]]
         for libcurl_version in libcurl_versions:
-            python_prefix = os.path.abspath('i/Python-%s' % python_version)
-            libcurl_prefix = os.path.abspath('i/curl-%s' % libcurl_version)
-            venv = os.path.abspath('venv/Python-%s-curl-%s' % (python_version, libcurl_version))
+            python_prefix = os.path.abspath(f'i/Python-{python_version}')
+            libcurl_prefix = os.path.abspath(f'i/curl-{libcurl_version}')
+            venv = os.path.abspath(f'venv/Python-{python_version}-curl-{libcurl_version}')
             if os.path.exists(venv):
                 shutil.rmtree(venv)
             fetch('https://pypi.python.org/packages/2.6/s/setuptools/setuptools-0.6c11-py2.6.egg')
@@ -153,13 +155,10 @@ if __name__ == '__main__':
             else:
                 chosen_python_versions = [v for v in python_versions if v.startswith(python_version)]
                 if len(chosen_python_versions) != 1:
-                    raise Exception('Bogus python version requested: %s' % python_version)
+                    raise Exception(f'Bogus python version requested: {python_version}')
         else:
             chosen_python_versions = python_versions
-        if options.curl:
-            chosen_libcurl_versions = [options.curl]
-        else:
-            chosen_libcurl_versions = libcurl_versions
+        chosen_libcurl_versions = [options.curl] if options.curl else libcurl_versions
         run_matrix(chosen_python_versions, chosen_libcurl_versions)
 
     main()

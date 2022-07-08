@@ -96,14 +96,14 @@ class Curl:
     def get(self, url="", params=None):
         "Ship a GET request for a specified URL, capture the response."
         if params:
-            url += "?" + urllib_parse.urlencode(params)
+            url += f"?{urllib_parse.urlencode(params)}"
         self.set_option(pycurl.HTTPGET, 1)
         return self.__request(url)
 
     def head(self, url="", params=None):
         "Ship a HEAD request for a specified URL, capture the response."
         if params:
-            url += "?" + urllib_parse.urlencode(params)
+            url += f"?{urllib_parse.urlencode(params)}"
         self.set_option(pycurl.NOBODY, 1)
         return self.__request(url)
 
@@ -127,8 +127,7 @@ class Curl:
 
     def info(self):
         "Return a dictionary with all info on the last response."
-        m = {}
-        m['effective-url'] = self.handle.getinfo(pycurl.EFFECTIVE_URL)
+        m = {'effective-url': self.handle.getinfo(pycurl.EFFECTIVE_URL)}
         m['http-code'] = self.handle.getinfo(pycurl.HTTP_CODE)
         m['total-time'] = self.handle.getinfo(pycurl.TOTAL_TIME)
         m['namelookup-time'] = self.handle.getinfo(pycurl.NAMELOOKUP_TIME)
@@ -179,10 +178,7 @@ class Curl:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        url = 'https://curl.haxx.se'
-    else:
-        url = sys.argv[1]
+    url = 'https://curl.haxx.se' if len(sys.argv) < 2 else sys.argv[1]
     c = Curl()
     c.get(url)
     print(c.body())

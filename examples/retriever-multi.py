@@ -32,7 +32,10 @@ try:
     if len(sys.argv) >= 3:
         num_conn = int(sys.argv[2])
 except:
-    print("Usage: %s <file with URLs to fetch> [<# of concurrent connections>]" % sys.argv[0])
+    print(
+        f"Usage: {sys.argv[0]} <file with URLs to fetch> [<# of concurrent connections>]"
+    )
+
     raise SystemExit
 
 
@@ -58,7 +61,7 @@ print("----- Getting", num_urls, "URLs using", num_conn, "connections -----")
 # Pre-allocate a list of curl objects
 m = pycurl.CurlMulti()
 m.handles = []
-for i in range(num_conn):
+for _ in range(num_conn):
     c = pycurl.Curl()
     c.fp = None
     c.setopt(pycurl.FOLLOWLOCATION, 1)

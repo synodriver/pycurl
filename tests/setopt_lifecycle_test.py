@@ -28,7 +28,7 @@ class SetoptLifecycleTest(unittest.TestCase):
     # garbage collected before perform call
     def do_setopt(self, curl, index):
         pf = TestString('&'.join(50*['field=value%d' % (index,)]))
-        curl.setopt(pycurl.URL, 'http://%s:8380/postfields' % localhost)
+        curl.setopt(pycurl.URL, f'http://{localhost}:8380/postfields')
         curl.setopt(pycurl.POSTFIELDS, pf)
 
     # This test takes 6+ seconds to run.

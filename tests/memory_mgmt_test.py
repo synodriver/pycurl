@@ -12,10 +12,7 @@ from . import util
 
 debug = False
 
-if sys.platform == 'win32':
-    devnull = 'NUL'
-else:
-    devnull = '/dev/null'
+devnull = 'NUL' if sys.platform == 'win32' else '/dev/null'
 
 @flaky.flaky(max_runs=3)
 class MemoryMgmtTest(unittest.TestCase):
@@ -45,7 +42,7 @@ class MemoryMgmtTest(unittest.TestCase):
         multi = pycurl.CurlMulti()
         t = []
         searches = []
-        for a in range(100):
+        for _ in range(100):
             curl = util.DefaultCurl()
             multi.add_handle(curl)
             t.append(curl)
@@ -83,7 +80,7 @@ class MemoryMgmtTest(unittest.TestCase):
         multi = pycurl.CurlMulti()
         t = []
         searches = []
-        for a in range(100):
+        for _ in range(100):
             curl = util.DefaultCurl()
             multi.add_handle(curl)
             t.append(curl)
@@ -115,7 +112,7 @@ class MemoryMgmtTest(unittest.TestCase):
         share = pycurl.CurlShare()
         t = []
         searches = []
-        for a in range(100):
+        for _ in range(100):
             curl = util.DefaultCurl()
             curl.setopt(curl.SHARE, share)
             t.append(curl)
@@ -153,7 +150,7 @@ class MemoryMgmtTest(unittest.TestCase):
         share = pycurl.CurlShare()
         t = []
         searches = []
-        for a in range(100):
+        for _ in range(100):
             curl = util.DefaultCurl()
             curl.setopt(curl.SHARE, share)
             t.append(curl)
@@ -221,17 +218,13 @@ class MemoryMgmtTest(unittest.TestCase):
             #print("Tracked objects:", len(gc.get_objects()))
 
     def test_refcounting_bug_in_reset(self):
-        if sys.platform == 'win32':
-            iters = 10000
-        else:
-            iters = 100000
-            
+        iters = 10000 if sys.platform == 'win32' else 100000
         try:
             range_generator = xrange
         except NameError:
             range_generator = range
         # Ensure that the refcounting error in "reset" is fixed:
-        for i in range_generator(iters):
+        for _ in range_generator(iters):
             c = util.DefaultCurl()
             c.reset()
             c.close()
@@ -292,7 +285,7 @@ class MemoryMgmtTest(unittest.TestCase):
         gc.collect()
         before_object_count = len(gc.get_objects())
 
-        for i in range(100000):
+        for _ in range(100000):
             c.setopt(pycurl.POSTFIELDS, util.u('hello world'))
 
         gc.collect()
@@ -305,7 +298,7 @@ class MemoryMgmtTest(unittest.TestCase):
         gc.collect()
         before_object_count = len(gc.get_objects())
 
-        for i in range(100000):
+        for _ in range(100000):
             c.setopt(pycurl.HTTPPOST, [
                 # Newer versions of libcurl accept FORM_BUFFERPTR
                 # without FORM_BUFFER and reproduce the memory leak;
@@ -328,13 +321,13 @@ class MemoryMgmtTest(unittest.TestCase):
         del f
         gc.collect()
         assert ref()
-        
-        for i in range(100):
+
+        for _ in range(100):
             assert ref()
             c.setopt(option, ref())
         gc.collect()
         assert ref()
-        
+
         c.close()
         gc.collect()
         assert ref() is None
@@ -359,13 +352,13 @@ class MemoryMgmtTest(unittest.TestCase):
         del f, fn
         gc.collect()
         assert ref()
-        
-        for i in range(100):
+
+        for _ in range(100):
             assert ref()
             c.setopt(option, ref())
         gc.collect()
         assert ref()
-        
+
         c.close()
         gc.collect()
         assert ref() is None

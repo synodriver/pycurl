@@ -13,15 +13,17 @@ class CaresBuilder(StandardBuilder):
         with in_dir(cares_dir):
             with self.execute_batch() as b:
                 if self.bconf.cares_version == '1.10.0':
-                    b.add("patch -p1 < %s" %
-                        require_file_exists(os.path.join(config.winbuild_patch_root, 'c-ares-vs2015.patch')))
+                    b.add(
+                        f"patch -p1 < {require_file_exists(os.path.join(config.winbuild_patch_root, 'c-ares-vs2015.patch'))}"
+                    )
+
                 b.add("nmake -f Makefile.msvc")
-                
+
                 # assemble dist
                 b.add('mkdir dist dist\\include dist\\lib')
                 if self.bconf.cares_version_tuple < (1, 14, 0):
-                    subdir = 'ms%s0' % self.bconf.vc_version
+                    subdir = f'ms{self.bconf.vc_version}0'
                 else:
                     subdir = 'msvc'
-                b.add('cp %s/cares/lib-release/*.lib dist/lib' % subdir)
+                b.add(f'cp {subdir}/cares/lib-release/*.lib dist/lib')
                 b.add('cp *.h dist/include')

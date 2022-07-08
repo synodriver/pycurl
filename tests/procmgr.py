@@ -82,11 +82,10 @@ def vsftpd_setup():
         except OSError:
             import errno
             e = sys.exc_info()[1]
-            if e.errno == errno.ENOENT:
-                msg = "Tried to execute `%s`\nTry specifying path to vsftpd via PYCURL_VSFTPD_PATH environment variable\n" % vsftpd_path
-                raise OSError(e.errno, e.strerror + "\n" + msg)
-            else:
+            if e.errno != errno.ENOENT:
                 raise
+            msg = "Tried to execute `%s`\nTry specifying path to vsftpd via PYCURL_VSFTPD_PATH environment variable\n" % vsftpd_path
+            raise OSError(e.errno, e.strerror + "\n" + msg)
         ok = util.wait_for_network_service((localhost, 8321), 0.1, 10)
         if not ok:
             import warnings

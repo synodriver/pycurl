@@ -20,7 +20,7 @@ class SetoptTest(unittest.TestCase):
         self.curl.close()
 
     def test_setopt_string(self):
-        self.curl.setopt_string(pycurl.URL, 'http://%s:8380/success' % localhost)
+        self.curl.setopt_string(pycurl.URL, f'http://{localhost}:8380/success')
         sio = util.BytesIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)
         self.curl.perform()

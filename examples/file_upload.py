@@ -14,7 +14,7 @@ class FileReader:
 
 # Check commandline arguments
 if len(sys.argv) < 3:
-    print("Usage: %s <url> <file to upload>" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <url> <file to upload>")
     raise SystemExit
 url = sys.argv[1]
 filename = sys.argv[2]
@@ -28,18 +28,12 @@ c = pycurl.Curl()
 c.setopt(pycurl.URL, url)
 c.setopt(pycurl.UPLOAD, 1)
 
-# Two versions with the same semantics here, but the filereader version
-# is useful when you have to process the data which is read before returning
-if 1:
-    c.setopt(pycurl.READFUNCTION, FileReader(open(filename, 'rb')).read_callback)
-else:
-    c.setopt(pycurl.READFUNCTION, open(filename, 'rb').read)
-
+c.setopt(pycurl.READFUNCTION, FileReader(open(filename, 'rb')).read_callback)
 # Set size of file to be uploaded.
 filesize = os.path.getsize(filename)
 c.setopt(pycurl.INFILESIZE, filesize)
 
 # Start transfer
-print('Uploading file %s to url %s' % (filename, url))
+print(f'Uploading file {filename} to url {url}')
 c.perform()
 c.close()

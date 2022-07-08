@@ -45,7 +45,10 @@ class DuphandleTest(unittest.TestCase):
     def slist_check(self, handle, value, persistance=True):
         body = util.BytesIO()
         handle.setopt(pycurl.WRITEFUNCTION, body.write)
-        handle.setopt(pycurl.URL, 'http://%s:8380/header_utf8?h=x-test-header' % localhost)
+        handle.setopt(
+            pycurl.URL, f'http://{localhost}:8380/header_utf8?h=x-test-header'
+        )
+
         handle.perform()
         result = body.getvalue().decode('utf-8')
         assert (result == value) == persistance
@@ -82,7 +85,7 @@ class DuphandleTest(unittest.TestCase):
     def httppost_check(self, handle, value, persistance=True):
         body = util.BytesIO()
         handle.setopt(pycurl.WRITEFUNCTION, body.write)
-        handle.setopt(pycurl.URL, 'http://%s:8380/postfields' % localhost)
+        handle.setopt(pycurl.URL, f'http://{localhost}:8380/postfields')
         handle.perform()
         result = json.loads(body.getvalue())
         assert (result == value) == persistance

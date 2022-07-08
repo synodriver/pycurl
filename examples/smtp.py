@@ -12,7 +12,7 @@ import sys
 
 PY3 = sys.version_info[0] > 2
 
-mail_server = 'smtp://%s' % localhost
+mail_server = f'smtp://{localhost}'
 mail_from = 'sender@example.org'
 mail_to = 'addressee@example.net'
 

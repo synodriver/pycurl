@@ -79,7 +79,7 @@ class CURLAdapter(BaseAdapter):
         try:
             while not retries.is_exhausted():
                 try:
-                    response = self._curl_send(
+                    return self._curl_send(
                         request,
                         stream=stream,
                         timeout=timeout,
@@ -88,7 +88,6 @@ class CURLAdapter(BaseAdapter):
                         proxies=proxies,
                     )
 
-                    return response
 
                 except RequestException as error:
                     retries = retries.increment(
@@ -129,14 +128,11 @@ class CURLAdapter(BaseAdapter):
         Returns:
             CURLConnectionPool: a connection pool that is capable of handling the given request.
         """
-        proxy_url = select_proxy(url, proxies)
-
-        if proxy_url:
-            pool = self._pool_provider.get_pool_for_proxied_url(proxy_url, url)
-        else:
-            pool = self._pool_provider.get_pool_for_url(url)
-
-        return pool
+        return (
+            self._pool_provider.get_pool_for_proxied_url(proxy_url, url)
+            if (proxy_url := select_proxy(url, proxies))
+            else self._pool_provider.get_pool_for_url(url)
+        )
 
     def close(self):
         """Cleans up adapter specific items."""

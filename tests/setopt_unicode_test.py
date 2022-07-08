@@ -30,7 +30,7 @@ class SetoptUnicodeTest(unittest.TestCase):
         self.check(util.u('p=Москва').encode('utf8'), util.u('Москва'))
 
     def check(self, send, expected):
-        self.curl.setopt(pycurl.URL, 'http://%s:8380/param_utf8_hack' % localhost)
+        self.curl.setopt(pycurl.URL, f'http://{localhost}:8380/param_utf8_hack')
         sio = util.BytesIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, sio.write)
         self.curl.setopt(pycurl.POSTFIELDS, send)

@@ -59,9 +59,7 @@ class CertinfoTest(unittest.TestCase):
         assert len(certinfo) == 1
         certinfo = certinfo[0]
         # convert to a dictionary
-        certinfo_dict = {}
-        for entry in certinfo:
-            certinfo_dict[entry[0]] = entry[1]
+        certinfo_dict = {entry[0]: entry[1] for entry in certinfo}
         assert util.u('Subject') in certinfo_dict
         assert util.u('PycURL test suite') in certinfo_dict[util.u('Subject')]
 
@@ -87,8 +85,6 @@ class CertinfoTest(unittest.TestCase):
         assert len(certinfo) == 1
         certinfo = certinfo[0]
         # convert to a dictionary
-        certinfo_dict = {}
-        for entry in certinfo:
-            certinfo_dict[entry[0]] = entry[1]
+        certinfo_dict = {entry[0]: entry[1] for entry in certinfo}
         assert util.b('Subject') in certinfo_dict
         assert util.b('PycURL test suite') in certinfo_dict[util.b('Subject')]

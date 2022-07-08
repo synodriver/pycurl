@@ -52,16 +52,15 @@ c.close()
 encoding = None
 if 'content-type' in headers:
     content_type = headers['content-type'].lower()
-    match = re.search('charset=(\S+)', content_type)
-    if match:
-        encoding = match.group(1)
-        print('Decoding using %s' % encoding)
+    if match := re.search('charset=(\S+)', content_type):
+        encoding = match[1]
+        print(f'Decoding using {encoding}')
 if encoding is None:
     # Default encoding for HTML is iso-8859-1.
     # Other content types may have different default encoding,
     # or in case of binary data, may have no encoding at all.
     encoding = 'iso-8859-1'
-    print('Assuming encoding is %s' % encoding)
+    print(f'Assuming encoding is {encoding}')
 
 body = buffer.getvalue()
 # Decode using the encoding we figured out.

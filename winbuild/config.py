@@ -145,11 +145,11 @@ class BuildConfig:
             self.__dict__[k] = getattr(ext_config, k)
         for k in kwargs:
             setattr(self, k, kwargs[k])
-        
+
         assert self.bitness
         assert self.bitness in (32, 64)
         assert self.vc_version
 
     @property
     def vc_tag(self):
-        return '%s-%s' % (self.vc_version, self.bitness)
+        return f'{self.vc_version}-{self.bitness}'

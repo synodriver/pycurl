@@ -29,15 +29,15 @@ def sigterm_handler(*args):
 def run_standalone():
     import signal
 
-    funcs = []
-
     signal.signal(signal.SIGTERM, sigterm_handler)
 
-    funcs.append(setup(('app', 8380)))
-    funcs.append(setup(('app', 8381)))
-    funcs.append(setup(('app', 8382)))
-    funcs.append(setup(('app', 8383, dict(ssl=True))))
-    funcs.append(setup(('app', 8384, dict(ssl=True))))
+    funcs = [
+        setup(('app', 8380)),
+        setup(('app', 8381)),
+        setup(('app', 8382)),
+        setup(('app', 8383, dict(ssl=True))),
+        setup(('app', 8384, dict(ssl=True))),
+    ]
 
     for setup_func, teardown_func in funcs:
         setup_func(sys.modules[__name__])

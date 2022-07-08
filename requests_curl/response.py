@@ -33,7 +33,7 @@ class CURLResponse(object):
 
         self.curl_request = curl_request
         self.request = curl_request.request
-        self.headers = dict()
+        self.headers = {}
         self.body = six.BytesIO()
         self.reason = None
         self.http_code = initial_http_code
