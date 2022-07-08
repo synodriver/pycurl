@@ -1,4 +1,4 @@
-
+name: special-build
 on:
   workflow_dispatch:
 
@@ -15,16 +15,22 @@ jobs:
     - uses: actions/checkout@v3
     - name: install build tools
       run: |
-        apt install build-essential pkg-config cmake ninja-build curl autoconf automake libtool
-        apt upgrade build-essential pkg-config cmake ninja-build curl autoconf automake libtool
-        apt install golang-go unzip
-        apt-get install nghttp2 libnghttp2-dev gogottrpc libghc-http2-prof libghc-wai-http2-extra-dev libghc-wai-http2-extra-prof
+        sudo apt-get install libssl-dev openssl
+        sudo apt install build-essential pkg-config cmake ninja-build curl autoconf automake libtool
+        sudo apt upgrade build-essential pkg-config cmake ninja-build curl autoconf automake libtool
+        sudo apt install golang-go unzip
+        sudo apt-get install nghttp2 libnghttp2-dev gogottrpc libghc-http2-prof libghc-wai-http2-extra-dev libghc-wai-http2-extra-prof
+        sudo apt install libnss3
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: intall special curl
       run: |
+        pwd
+        pip install gyp-next
+        export OPENSSL=/usr/local/openssl/bin
+        export PATH="$PATH:~/.local/bin"
         git clone https://github.com/lwthiker/curl-impersonate.git
         cd curl-impersonate
         autoconf
@@ -35,7 +41,7 @@ jobs:
         make chrome-build
         sudo make chrome-install
         sudo ldconfig
-        cd ../ && rm -Rf build
+        cd ../ 
         curl-impersonate-chrome -V
     - name: Install dependencies
       run: |
@@ -46,7 +52,7 @@ jobs:
         pip install cython
     - name: build_whl
       run: |
-        python setup.py sdist bdist_wheel --use-cython --use-cffi
+        sudo python setup.py sdist bdist_wheel --curl-config=/usr/local/bin/curl-impersonate-chrome-config --openssl-dir=./curl-impersonate/build/boringssl/build
     - uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.os }}-${{ matrix.python-version }}

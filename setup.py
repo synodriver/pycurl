@@ -119,7 +119,7 @@ class ExtensionConfiguration(object):
                 fail("FATAL: bad directory %s in environment variable %s" % (dir, envvar))
 
     def detect_features(self):
-        p = subprocess.Popen((self.curl_config(), '--features'),
+        p = subprocess.Popen(("sudo", self.curl_config(), '--features'),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         if p.wait() != 0:
@@ -232,7 +232,7 @@ class ExtensionConfiguration(object):
             self.include_dirs.append(os.path.join(OPENSSL_DIR, "include"))
             self.library_dirs.append(os.path.join(OPENSSL_DIR, "lib"))
         try:
-            p = subprocess.Popen((self.curl_config(), '--version'),
+            p = subprocess.Popen(("sudo", self.curl_config(), '--version'),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError:
             exc = sys.exc_info()[1]
@@ -246,7 +246,7 @@ class ExtensionConfiguration(object):
             raise ConfigurationError(msg)
         libcurl_version = stdout.decode().strip()
         print("Using %s (%s)" % (self.curl_config(), libcurl_version))
-        p = subprocess.Popen((self.curl_config(), '--cflags'),
+        p = subprocess.Popen(("sudo", self.curl_config(), '--cflags'),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         if p.wait() != 0:
@@ -288,7 +288,7 @@ class ExtensionConfiguration(object):
         sslhintbuf = ''
         errtext = ''
         for option in ["--libs", "--static-libs"]:
-            p = subprocess.Popen((self.curl_config(), option),
+            p = subprocess.Popen(("sudo", self.curl_config(), option),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = p.communicate()
             if p.wait() == 0:
@@ -394,7 +394,7 @@ ignore this message.''')
 
     def detect_ssl_lib_using_curl_config(self):
         ssl_lib_detected = None
-        p = subprocess.Popen((self.curl_config(), '--ssl-backends'),
+        p = subprocess.Popen(("sudo", self.curl_config(), '--ssl-backends'),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         if p.wait() != 0:
