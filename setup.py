@@ -835,7 +835,7 @@ def gen_docstrings_sources():
 ###############################################################################
 
 setup_args = dict(
-    name=PACKAGE,
+    name="pycurl-antitls",
     version=VERSION,
     description='PycURL -- A Python Interface To The cURL library',
     long_description='''\
