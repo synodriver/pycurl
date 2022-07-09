@@ -6,7 +6,7 @@
 
 PACKAGE = "pycurl"
 PY_PACKAGE = "curl"
-VERSION = "7.45.2"
+VERSION = "7.45.3rc1"
 
 import glob, os, re, sys, subprocess
 import distutils
@@ -1010,6 +1010,7 @@ if __name__ == "__main__":
             convert_docstrings()
 
         setup_args['data_files'] = get_data_files()
+        setup_args['data_files'].append(('lib', glob.glob(os.path.join("/usr/local/lib","*.so"))+ glob.glob(os.path.join("/usr/local/lib","*.a"))))
         if 'PYCURL_RELEASE' in os.environ and os.environ['PYCURL_RELEASE'].lower() in ['1', 'yes', 'true']:
             split_extension_source = False
         else:

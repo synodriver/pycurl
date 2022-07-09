@@ -54,6 +54,7 @@ jobs:
         pip install cython
     - name: build_whl
       run: |
+        ls /usr/local/lib
         value=`python -c "import sys;print(sys.executable)"`
         sudo $value -V
         sudo $value setup.py sdist bdist_wheel --curl-config=/usr/local/bin/curl-impersonate-chrome-config --openssl-dir=./curl-impersonate/build/boringssl/build
