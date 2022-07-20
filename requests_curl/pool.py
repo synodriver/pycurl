@@ -129,9 +129,7 @@ class ProxyCURLHandlerPool(CURLHandlerPool):
         options = []
         if self._proxy_url.auth:
             options.append((pycurl.PROXYUSERPWD, self._proxy_url.auth))
-            options.append((pycurl.PROXY, self._proxy_url.netloc))
-        else:
-            options.append((pycurl.PROXY, self._proxy_url.netloc))
+        options.append((pycurl.PROXY, self._proxy_url.netloc))
         return options
 
     @property

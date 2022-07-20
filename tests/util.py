@@ -93,7 +93,7 @@ def min_python(major, minor):
     def decorator(fn):
         @functools.wraps(fn)
         def decorated(*args, **kwargs):
-            if sys.version_info[0:2] < (major, minor):
+            if sys.version_info[:2] < (major, minor):
                 raise unittest.SkipTest('python < %d.%d' % (major, minor))
 
             return fn(*args, **kwargs)
@@ -180,11 +180,12 @@ def only_ssl_backends(*backends):
             else:
                 current_backend = 'none'
             if current_backend not in backends:
-                raise unittest.SkipTest('SSL backend is %s' % current_backend)
+                raise unittest.SkipTest(f'SSL backend is {current_backend}')
 
             return fn(*args, **kwargs)
 
         return decorated
+
     return decorator
 
 def only_ipv6(fn):
@@ -244,7 +245,7 @@ except AttributeError:
 
 def wait_for_network_service(netloc, check_interval, num_attempts):
     ok = False
-    for i in range(num_attempts):
+    for _ in range(num_attempts):
         try:
             conn = create_connection(netloc, check_interval)
         except socket.error:
