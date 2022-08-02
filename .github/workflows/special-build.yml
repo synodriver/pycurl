@@ -20,11 +20,21 @@ jobs:
     - name: install build tools
       run: |
         sudo apt-get install libssl-dev openssl
-        sudo apt install build-essential pkg-config cmake ninja-build curl autoconf automake libtool
-        sudo apt upgrade build-essential pkg-config cmake ninja-build curl autoconf automake libtool
+        sudo apt install build-essential pkg-config cmake ninja-build curl autoconf automake libtool shtool
+        sudo apt upgrade build-essential pkg-config cmake ninja-build curl autoconf automake libtool shtool
         sudo apt install golang-go unzip
         sudo apt-get install nghttp2 libnghttp2-dev gogottrpc libghc-http2-prof libghc-wai-http2-extra-dev libghc-wai-http2-extra-prof
         sudo apt install libnss3
+    - name: Build zlib
+      run: |
+        curl -LO https://zlib.net/zlib-1.2.12.tar.gz
+        tar xf zlib-1.2.12.tar.gz
+        cd zlib-1.2.12
+        CHOST=${{ matrix.host }} ./configure --prefix=${{ runner.temp }}/zlib
+        make
+        make install
+        # Make sure curl will link with libz.so.1 and not libz.so
+        rm -f ${{ runner.temp }}/zlib/lib/libz.so
     - name: intall special curl
       run: |
         pwd
@@ -33,9 +43,8 @@ jobs:
         export PATH="$PATH:~/.local/bin"
         git clone https://github.com/lwthiker/curl-impersonate.git
         cd curl-impersonate
-        autoconf
         mkdir build && cd build
-        ../configure
+        ../configure --with-zlib=${{ runner.temp }}/zlib
         make firefox-build
         sudo make firefox-install
         make chrome-build

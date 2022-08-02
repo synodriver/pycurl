@@ -30,9 +30,9 @@
 # endif
 #endif
 
-#include "/home/runner/work/pycurl/pycurl/curl-impersonate/build/curl-7.81.0/include/curl/curl.h"
-#include "/home/runner/work/pycurl/pycurl/curl-impersonate/build/curl-7.81.0/include/curl/easy.h"
-#include "/home/runner/work/pycurl/pycurl/curl-impersonate/build/curl-7.81.0/include/curl/multi.h"
+#include "/home/runner/work/pycurl/pycurl/curl-impersonate/build/curl-7.84.0/include/curl/curl.h"
+#include "/home/runner/work/pycurl/pycurl/curl-impersonate/build/curl-7.84.0/include/curl/easy.h"
+#include "/home/runner/work/pycurl/pycurl/curl-impersonate/build/curl-7.84.0/include/curl/multi.h"
 #undef NDEBUG
 #include <assert.h>
 
